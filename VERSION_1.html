@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Grid - Project Interface</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: #FF4ECD;
+            --secondary-glow: #00BFFF;
+            --panel-bg: rgba(11, 22, 53, 0.85);
+            --border-color: rgba(0, 191, 255, 0.4);
+            --text-color: #E0F7FA;
+        }
+        body { margin: 0; background: #000005; color: var(--text-color); font-family: 'Roboto Mono', monospace; overflow: hidden; }
+        * { box-sizing: border-box; }
+
+        #main-nav { position: absolute; top: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); padding: 10px 30px; display: flex; align-items: center; z-index: 1000; border-bottom: 1px solid var(--border-color); }
+        #nav-title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.5em; color: var(--primary-glow); }
+        #nav-links { margin-left: auto; }
+        .nav-button { background: none; border: 1px solid transparent; color: var(--text-color); font-family: 'Orbitron', sans-serif; font-size: 1em; padding: 10px 20px; cursor: pointer; transition: all 0.3s; }
+        .nav-button:hover, .nav-button.active { background: rgba(0, 191, 255, 0.2); border-color: var(--secondary-glow); }
+        .nav-button.active { color: var(--primary-glow); text-shadow: 0 0 8px var(--primary-glow); }
+
+        .view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity 0.5s ease-in-out; }
+        .view.active { opacity: 1; pointer-events: auto; z-index: 1; }
+        
+        #intro-view, #compatibility-view { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; background: url('https://unpkg.com/three-globe@2.27.1/example/img/night-sky.png'); padding-top: 60px; }
+        #intro-view h1 { font-size: 5vw; color: var(--primary-glow); font-family: 'Orbitron', sans-serif; margin: 0; }
+        #intro-view p { font-size: 1.2em; max-width: 800px; color: #aaa; }
+        #launch-demo-btn { font-size: 1.2em; padding: 15px 30px; background: var(--primary-glow); border: none; color: white; cursor: pointer; transition: all 0.3s; font-family: 'Orbitron', sans-serif; margin-top: 30px; }
+        
+        #compatibility-view .content { max-width: 900px; text-align: left; background: var(--panel-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--border-color); }
+        #compatibility-view h2 { color: var(--primary-glow); font-family: 'Orbitron', sans-serif; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        #compatibility-view strong { color: var(--secondary-glow); }
+
+        #demo-view canvas { position: absolute; top: 0; left: 0; z-index: -1; }
+        .panel { position: absolute; background: var(--panel-bg); backdrop-filter: blur(12px); border-radius: 15px; border: 1px solid var(--border-color); box-shadow: 0 0 20px var(--border-color); padding: 25px; z-index: 10; }
+        
+        /* --- Final Polished Layout --- */
+        #main-panel { top: 80px; left: 20px; width: 420px; }
+        #legend-panel { top: 80px; right: 20px; width: 300px; }
+        #info-panel { bottom: 20px; right: 20px; width: 300px; display: none; }
+        
+        /* --- Final Polished Button Styles --- */
+        .button-group {
+            border: 1px solid #455d7a;
+            display: inline-flex;
+            flex-wrap: wrap;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .button-group button {
+            background: rgba(11, 22, 53, 0.5);
+            border: none;
+            border-right: 1px solid #455d7a;
+            color: #ccc;
+            font-family: 'Orbitron', sans-serif;
+            padding: 8px 16px;
+            margin: 0;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border-radius: 0;
+        }
+        .button-group button:last-child { border-right: none; }
+        .button-group button:hover { background: rgba(0, 191, 255, 0.2); color: #ffffff; }
+        .button-group button.active {
+            background: var(--primary-glow);
+            color: #ffffff;
+            text-shadow: 0 0 8px #ffffff;
+            box-shadow: none;
+        }
+        
+        .info-line { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 6px 0; font-size: 0.9em;}
+        #slider-container { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        #sat-slider { width: 100%; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 10px; font-size: 0.9em; }
+        .legend-color-box { width: 15px; height: 15px; margin-right: 10px; border-radius: 3px; flex-shrink: 0;}
+    </style>
+</head>
+<body>
+    <nav id="main-nav">
+        <div id="nav-title">Quantum Grid</div>
+        <div id="nav-links">
+            <button class="nav-button active" data-view="intro-view">Introduction</button>
+            <button class="nav-button" data-view="demo-view">Interactive Demo</button>
+            <button class="nav-button" data-view="compatibility-view">Compatibility</button>
+        </div>
+    </nav>
+
+    <main>
+        <section id="intro-view" class="view active">
+            <h1>Quantum Grid</h1>
+            <p>An optimized, multi-layered geodesic grid for global satellite constellations, designed for universal compatibility and maximum efficiency.</p>
+            <button id="launch-demo-btn">Launch Interactive Demo</button>
+        </section>
+
+        <section id="demo-view" class="view">
+            <div id="main-panel" class="panel"></div>
+            <div id="legend-panel" class="panel"></div>
+            <div id="info-panel" class="panel"></div>
+        </section>
+
+        <section id="compatibility-view" class="view">
+            <div class="content">
+                <h2>The Compatibility Challenge</h2>
+                <p>Satellites are built by different countries and companies. Some use radio frequencies (like X-band or Ka-band), while others use newer laser/optical signals. If they don’t “speak the same language,” they cannot form one unified grid.</p>
+                <h2>The Solution: A Universal Protocol</h2>
+                <p>Our model integrates a <strong>Standardized Communication Layer</strong> into each satellite. This acts like a universal translator, converting any native signal into a common digital packet format, inspired by the internet's TCP/IP protocol and real-world space protocols like CCSDS.</p>
+                <h2>The Impact</h2>
+                <p>This approach allows all satellites—old or new, from any country, using radio or laser—to work together seamlessly in one secure, unified, and truly global network.</p>
+            </div>
+        </section>
+    </main>
+
+    <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let isThreeInitialized = false;
+        let isDemoViewActive = false;
+        let animateDemo = () => {};
+
+        const navButtons = document.querySelectorAll('.nav-button');
+        const views = document.querySelectorAll('.view');
+        
+        function switchView(viewId) {
+            isDemoViewActive = (viewId === 'demo-view');
+            views.forEach(view => view.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.view === viewId));
+            if (isDemoViewActive && !isThreeInitialized) {
+                initThreeJS();
+                isThreeInitialized = true;
+            } else if (isDemoViewActive && isThreeInitialized) {
+                animateDemo();
+            }
+        }
+
+        navButtons.forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
+        document.getElementById('launch-demo-btn').addEventListener('click', () => switchView('demo-view'));
+
+        function initThreeJS() {
+            let scene, camera, renderer, controls, constellationGroup, globe;
+            const CONFIG = { DISORDERED_COUNT: 250, OPTIMIZED_COUNT: 150, HIGH_DENSITY_COUNT: 400, GLOBE_RADIUS: 5 };
+            const SAT_TYPES = { RADIO_KA: { name: "Radio (Ka-Band)", color: 0x00BFFF, shape: 'sphere' }, RADIO_X: { name: "Radio (X-Band)", color: 0x00F5FF, shape: 'sphere' }, OPTICAL: { name: "Optical/Laser", color: 0x39FF14, shape: 'diamond' } };
+            const GRID_LINE_COLORS = { LEO_GRID: { name: "Layer 1 Grid (LEO)", color: 0xFF8C00 }, MEO_GRID: { name: "Layer 2 Grid (MEO)", color: 0x9400D3 } };
+            let disordered_data = [], optimized_data = [], high_density_data = [];
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.z = 15;
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('demo-view').appendChild(renderer.domElement);
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.minDistance = 7; controls.maxDistance = 40;
+            
+            globe = new THREE.Mesh( new THREE.SphereGeometry(CONFIG.GLOBE_RADIUS, 64, 64), new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('https://unpkg.com/three-globe@2.27.1/example/img/earth-night.jpg') }) );
+            scene.add(globe);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(5, 3, 5);
+            scene.add(dirLight);
+            constellationGroup = new THREE.Group();
+            scene.add(constellationGroup);
+
+            populateUI();
+            generateAllData();
+            attachEventListeners();
+            
+            document.getElementById('disorderedBtn').click();
+            
+            animateDemo = function() { 
+                if(!isDemoViewActive) return;
+                requestAnimationFrame(animateDemo); 
+                controls.update(); 
+                if (globe) globe.rotation.y += 0.0005; 
+                constellationGroup.rotation.y += 0.0007; 
+                renderer.render(scene, camera); 
+            }
+            animateDemo();
+
+            function populateUI() { document.getElementById('main-panel').innerHTML = `<h1>Interactive Demo</h1><p>Control and inspect the satellite constellations.</p><div id="live-stats"></div><div class="button-group" id="main-controls"><button id="disorderedBtn">Current State</button><button id="optimizedBtn">Optimized Grid</button><button id="highDensityBtn">High-Density Grid</button></div><div id="slider-container"><label>Optimized Node Count: 150</label><input type="range" min="10" max="500" value="150" id="sat-slider"></div>`; document.getElementById('legend-panel').innerHTML = `<h3 id="legend-title">System Legend</h3><div id="legend-content"></div><div id="layer-filters" class="button-group hidden"><h3 style="width: 100%; margin-bottom: 5px; font-family: 'Orbitron', sans-serif; font-size: 1em; color: var(--secondary-glow);">Layer Filters</h3><button data-layer="1">Layer 1 (LEO)</button><button data-layer="2">Layer 2 (MEO)</button><button data-layer="all" class="active">Show All</button></div>`; }
+            function generateAllData() { disordered_data = generateRandomSatData(CONFIG.DISORDERED_COUNT); optimized_data = generateOptimizedGridData(CONFIG.OPTIMIZED_COUNT); high_density_data = generateOptimizedGridData(CONFIG.HIGH_DENSITY_COUNT); }
+            function generateRandomSatData(count) { return Array.from({length: count}, (_, i) => { const typeKeys = Object.keys(SAT_TYPES); const type = typeKeys[i % typeKeys.length]; const u = Math.random(), v = Math.random(); const theta = 2 * Math.PI * u, phi = Math.acos(2 * v - 1); const r = 6 + Math.random() * 0.8; return { type: type, position: new THREE.Vector3(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta)) }; }); }
+            function generateOptimizedGridData(count) { const points = []; const phi = Math.PI * (3 - Math.sqrt(5)); for (let i = 0; i < count; i++) { const orbital_layer = (i % 2) + 1; const altitude_offset = orbital_layer === 1 ? 1.2 : 2.2; const r_outer = CONFIG.GLOBE_RADIUS + altitude_offset; const y = 1 - (i / (count - 1)) * 2; const radius = Math.sqrt(1 - y * y); const theta = phi * i; const x = Math.cos(theta) * radius; const z = Math.sin(theta) * radius; points.push({ orbital_layer, position: new THREE.Vector3(x, y, z).multiplyScalar(r_outer) }); } return points; }
+            function attachEventListeners() {
+                const mainButtons = document.querySelectorAll('#main-controls button');
+                const setActiveButton = (btnList, activeBtn) => { btnList.forEach(btn => btn.classList.remove('active')); activeBtn.classList.add('active'); };
+                const sliderContainer = document.getElementById('slider-container');
+                const satSlider = document.getElementById('sat-slider');
+                const sliderLabel = document.querySelector('#slider-container label');
+                const layerFiltersContainer = document.getElementById('layer-filters');
+                document.getElementById('disorderedBtn').addEventListener('click', (e) => { plotConstellation(disordered_data, false); setActiveButton(mainButtons, e.target); sliderContainer.style.display = 'none'; layerFiltersContainer.classList.add('hidden'); });
+                document.getElementById('optimizedBtn').addEventListener('click', (e) => { plotConstellation(optimized_data, true); setActiveButton(mainButtons, e.target); sliderContainer.style.display = 'block'; layerFiltersContainer.classList.remove('hidden'); satSlider.value = optimized_data.length; sliderLabel.textContent = `Optimized Node Count: ${optimized_data.length}`; });
+                document.getElementById('highDensityBtn').addEventListener('click', (e) => { plotConstellation(high_density_data, true); setActiveButton(mainButtons, e.target); sliderContainer.style.display = 'block'; layerFiltersContainer.classList.remove('hidden'); satSlider.value = high_density_data.length; sliderLabel.textContent = `Optimized Node Count: ${high_density_data.length}`; });
+                satSlider.addEventListener('input', (e) => { sliderLabel.textContent = `Optimized Node Count: ${e.target.value}`; });
+                satSlider.addEventListener('change', (e) => { const count = parseInt(e.target.value); optimized_data = generateOptimizedGridData(count); plotConstellation(optimized_data, true); });
+                const filterButtons = document.querySelectorAll('#layer-filters button'); filterButtons.forEach(button => { button.addEventListener('click', (e) => { const layer = e.target.getAttribute('data-layer'); filterLayers(layer); setActiveButton(filterButtons, e.target); }); });
+            }
+            function clearGroup(group) { while (group.children.length > 0) { const child = group.children[0]; if (child.isGroup) { clearGroup(child); } else { if(child.geometry) child.geometry.dispose(); if(child.material) child.material.dispose(); } group.remove(child); } }
+            function plotConstellation(data, isOptimized) { clearGroup(constellationGroup); if (isOptimized) { const coreGeom = new THREE.SphereGeometry(0.04, 8, 8); const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); data.forEach(sat => { const nodeGroup = new THREE.Group(); nodeGroup.position.copy(sat.position); nodeGroup.userData = sat; const core = new THREE.Mesh(coreGeom, coreMat); nodeGroup.add(core); constellationGroup.add(nodeGroup); }); const lineSegments = {1:[], 2:[]}; const threshold = 3.0; const nodes = constellationGroup.children; for (let i = 0; i < nodes.length; i++) { for (let j = i + 1; j < nodes.length; j++) { if (nodes[i].userData.orbital_layer === nodes[j].userData.orbital_layer && nodes[i].position.distanceTo(nodes[j].position) < threshold) { lineSegments[nodes[i].userData.orbital_layer].push(nodes[i].position, nodes[j].position); } } } if (lineSegments[1].length > 0) { const lineGeom1 = new THREE.BufferGeometry().setFromPoints(lineSegments[1]); const lineMat1 = new THREE.LineBasicMaterial({ color: GRID_LINE_COLORS.LEO_GRID.color, transparent: true, opacity: 0.5 }); const lines1 = new THREE.LineSegments(lineGeom1, lineMat1); lines1.userData = {orbital_layer: 1}; constellationGroup.add(lines1); } if (lineSegments[2].length > 0) { const lineGeom2 = new THREE.BufferGeometry().setFromPoints(lineSegments[2]); const lineMat2 = new THREE.LineBasicMaterial({ color: GRID_LINE_COLORS.MEO_GRID.color, transparent: true, opacity: 0.5 }); const lines2 = new THREE.LineSegments(lineGeom2, lineMat2); lines2.userData = {orbital_layer: 2}; constellationGroup.add(lines2); } } else { const sphereGeom = new THREE.SphereGeometry(0.05, 8, 8); const diamondGeom = new THREE.OctahedronGeometry(0.07, 0); data.forEach(sat => { const typeInfo = SAT_TYPES[sat.type]; const geometry = typeInfo.shape === 'sphere' ? sphereGeom : diamondGeom; const satMesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: typeInfo.color })); satMesh.position.copy(sat.position); constellationGroup.add(satMesh);}); } updateLegend(isOptimized); updateLiveStats(data.length, isOptimized); }
+            function updateLegend(isOptimized) { const legendContent = document.getElementById('legend-content'); const legendTitle = document.getElementById('legend-title'); legendContent.innerHTML = ''; const types = isOptimized ? GRID_LINE_COLORS : SAT_TYPES; legendTitle.innerText = isOptimized ? "Unified Grid Layers" : "Current Disjointed Systems"; if (isOptimized) { legendContent.innerHTML += `<div class="legend-item"><div class="legend-color-box" style="background:radial-gradient(circle, #fff 20%, #ddd 100%);"></div><span>Unified Node Core</span></div>`; for (const key in types) { const item = document.createElement('div'); item.className = 'legend-item'; item.innerHTML = `<div class="legend-color-box" style="background-color: #${new THREE.Color(types[key].color).getHexString()};"></div><span>${types[key].name}</span>`; legendContent.appendChild(item); }} else { for (const key in SAT_TYPES) { const item = document.createElement('div'); item.className = 'legend-item'; item.innerHTML = `<div class="legend-color-box" style="background-color: #${new THREE.Color(SAT_TYPES[key].color).getHexString()};"></div><span>${SAT_TYPES[key].name}</span>`; } } }
+            function updateLiveStats(count, isOptimized) { const statsDiv = document.getElementById('live-stats'); let coverage = isOptimized ? Math.min(99.9, (1 - 1 / (count / 10 + 1)) * 110) : 40 + count / 15; let throughput = isOptimized ? count * 0.028 : count * 0.005; statsDiv.innerHTML = `<div class="info-line"><span>Nodes Online:</span> <span>${count}</span></div><div class="info-line"><span>Est. Global Coverage:</span> <span>${coverage.toFixed(1)}%</span></div><div class="info-line"><span>Data Throughput:</span> <span>${throughput.toFixed(1)} Tbps</span></div>`; }
+            function filterLayers(layerToShow) { constellationGroup.children.forEach(child => { if (child.userData && child.userData.orbital_layer) { if (layerToShow === 'all') { child.visible = true; } else { child.visible = (child.userData.orbital_layer == layerToShow); } } }); }
+        }
+    </script>
+</body>
+</html>
